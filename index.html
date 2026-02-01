@@ -203,6 +203,47 @@
 
     <div class="bg-hearts" id="heart-container"></div>
 
+    <!-- Hidden Audio Player -->
+    <audio id="bg-music" loop autoplay>
+        <source src="music.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <script>
+        // Try to play immediately
+        window.addEventListener('load', function () {
+            var audio = document.getElementById("bg-music");
+            audio.currentTime = 0; // Forced start from 00s
+
+
+            var promise = audio.play();
+
+            if (promise !== undefined) {
+                promise.then(_ => {
+                    // Autoplay started!
+                }).catch(error => {
+                    // Browser blocked 0-interaction autoplay.
+                    // We will brute-force listen for ANY activity (mouse move, scroll, key)
+                    // This is the closest we can get to "immediate" without a click.
+                    var startAudio = function () {
+                        audio.play().then(() => {
+                            // Success! Remove all listeners
+                            ['click', 'touchstart', 'keydown', 'scroll', 'mousemove'].forEach(evt =>
+                                document.body.removeEventListener(evt, startAudio)
+                            );
+                        }).catch(e => {
+                            // If mousemove fails, we just keep waiting silently. No error popup.
+                        });
+                    };
+
+                    ['click', 'touchstart', 'keydown', 'scroll', 'mousemove'].forEach(evt =>
+                        document.body.addEventListener(evt, startAudio)
+                    );
+                });
+            }
+        });
+    </script>
+
     <div class="glass-card" id="card">
         <div class="question-content">
             <h1>Hey Zaman! 🌹</h1>
@@ -286,17 +327,12 @@
                 noBtn.innerText = phrases[level];
             }
 
-            // Logic:
-            // 0 -> 1: Clicked "No", changing to "Wait..." -> Short Jump
-            // ...
-            // Last level: "No escape" -> Activate hover run
-
             if (level >= phrases.length - 1) {
                 noBtn.innerText = phrases[phrases.length - 1];
                 isRunningAway = true;
                 moveButton(true); // Big jump to signal chaos
             } else {
-                moveButton(false);
+                moveButton(false); // Short hop
             }
         }
 
@@ -339,7 +375,7 @@
                 overlap = false;
 
                 if (aggressive || attempts > 5) {
-                    // Teleport anywhere
+                    // Teleport anywhere in the card
                     newX = Math.random() * (maxX - minX) + minX;
                     newY = Math.random() * (maxY - minY) + minY;
                 } else {
